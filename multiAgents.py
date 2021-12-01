@@ -74,7 +74,56 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        cost = []
+        foodNear = []
+        foodNew = []
+
+        # pacman position. basic current position.
+        pacPos = currentGameState.getPacmanPosition()
+
+        # continue in the current direction, should no other flag be triggered.
+        direction = currentGameState.getPacmanState().getDirection()
+        
+        # score optimization. if the current score is less than the successor, we go for that option.
+        scoreDiff = currentGameState.getScore() - successorGameState.getScore()
+
+        # see closest ghost vs new movement position.
+        for killState in newGhostStates:
+            cost.append(manhattanDistance(newPos, killState.getPosition()))
+        minGhostDist = min(cost)
+
+        # find minimum distance between current position and food.
+        for food in currentGameState.getFood().asList():
+            foodNear.append(manhattanDistance(pacPos, food))
+        closestFoodDist = min(foodNear)
+
+        # find minimum distance between new position and food.
+        for food in newFood.asList():
+            foodNew.append(manhattanDistance(newPos, food))
+
+        # if there are new food items, target the shortest distance item.
+        closestNewFoodDist = 0
+        if foodNew:
+            closestNewFoodDist = min(foodNew)
+        closerFood = closestFoodDist - closestNewFoodDist
+
+        # used to check current state situation. reflex
+        # dead state.
+        if minGhostDist <= 1 or action == Directions.STOP:
+            return 0
+        # optimize score.
+        if scoreDiff < 0:
+            return 16
+        # if the score doesn't matter/ will always go down, target food.
+        elif closerFood > 0:
+            return 8
+        # continue forward.
+        elif action == direction:
+            return 4
+        # do anything tbh.
+        else:
+            return 2
+        
 
 def scoreEvaluationFunction(currentGameState):
     """
